@@ -1,2 +1,3 @@
-data/*
+
 src/data_prep.ipynb
+src/logs.log
