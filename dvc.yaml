@@ -6,3 +6,18 @@ stages:
     - src/data_prep.py
     outs:
     - data/processed/telco_churn_clean.csv
+  train:
+    cmd: python src/train.py
+    deps:
+    - data/processed/telco_churn_clean.csv
+    - src/train.py
+    params:
+    - model.params.C
+    - model.params.max_iter
+    - split.random_state
+    - split.test_size
+    outs:
+    - models/telco_churn_model.pkl
+    metrics:
+    - metrics/metrics.json:
+        cache: false
