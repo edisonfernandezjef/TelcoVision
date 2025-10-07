@@ -1,3 +1,4 @@
 
 src/data_prep.ipynb
 src/logs.log
+data/processed/telco_churn_clean.csv
