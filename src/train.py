@@ -1,58 +1,68 @@
+# src/train.py
+import yaml, json, mlflow, mlflow.sklearn
 import pandas as pd
-import json
-import yaml
-import os
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score
 import joblib
+import os
 
 # 1️⃣ Leer parámetros desde params.yaml
-with open("params.yaml", "r") as f:
+with open("params.yaml") as f:
     params = yaml.safe_load(f)
 
-C = params["model"]["params"]["C"]
-max_iter = params["model"]["params"]["max_iter"]
-test_size = params["split"]["test_size"]
-random_state = params["split"]["random_state"]
-model_path = params["path"]["model_path"]
-metrics_path = params["path"]["metrics_path"]
+# --- Secciones ---
+paths = params["path"]
+model_cfg = params["model"]
+split_cfg = params["split"]
 
-# 2️⃣ Cargar dataset limpio
-df = pd.read_csv("data/processed/telco_churn_clean.csv")
+# --- Variables ---
+input_path = paths["raw_data"]
+model_path = paths["model_path"]
+metrics_path = paths["metrics_path"]
 
-# 3️⃣ Separar features y target
-X = df.drop("churn", axis=1)
+C = model_cfg["C"]
+max_iter = model_cfg["max_iter"]
+solver = model_cfg["solver"]
+
+test_size = split_cfg["test_size"]
+random_state = split_cfg["random_state"]
+
+# 2️⃣ Leer dataset
+df = pd.read_csv(input_path)
+X = df.drop(columns=["churn"])
 y = df["churn"]
 
-# 4️⃣ Dividir datos
+# 3️⃣ Split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=test_size, random_state=random_state, stratify=y
+    X, y, test_size=test_size, random_state=random_state
 )
 
-# 5️⃣ Entrenar modelo
-model = LogisticRegression(C=C, max_iter=max_iter)
-model.fit(X_train, y_train)
+# 4️⃣ Configurar MLflow (DagsHub)
+mlflow.set_tracking_uri("https://dagshub.com/<usuario>/<repo>.mlflow")
+mlflow.set_experiment("TelcoVision_Experiments")
 
-# 6️⃣ Evaluar modelo
-y_pred = model.predict(X_test)
+# 5️⃣ Entrenar y registrar
+with mlflow.start_run():
+    mlflow.log_params(model_cfg)
 
-metrics = {
-    "accuracy": accuracy_score(y_test, y_pred),
-    "precision": precision_score(y_test, y_pred),
-    "recall": recall_score(y_test, y_pred),
-    "f1": f1_score(y_test, y_pred)
-}
+    model = LogisticRegression(C=C, max_iter=max_iter, solver=solver)
+    model.fit(X_train, y_train)
 
-# 7️⃣ Guardar métricas
-os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
-with open(metrics_path, "w") as f:
-    json.dump(metrics, f, indent=4)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
 
-# 8️⃣ Guardar modelo entrenado
-os.makedirs(os.path.dirname(model_path), exist_ok=True)
-joblib.dump(model, model_path)
+    mlflow.log_metrics({"accuracy": acc, "f1_score": f1})
+    mlflow.sklearn.log_model(model, "model")
+
+    # 6️⃣ Guardar artefactos locales (DVC)
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    joblib.dump(model, model_path)
+
+    os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
+    with open(metrics_path, "w") as f:
+        json.dump({"accuracy": acc, "f1_score": f1}, f)
 
 print(f"✅ Modelo guardado en: {model_path}")
-print(f"📊 Métricas guardadas en: {metrics_path}")
-print(json.dumps(metrics, indent=4))
+print(f"✅ Métricas guardadas en: {metrics_path}")

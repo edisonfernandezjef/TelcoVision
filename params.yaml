@@ -1,8 +1,8 @@
 model:
-    type: LogisticRegression
-    params:
-        C: 1.0
-        max_iter: 200
+  type: LogisticRegression
+  C: 1.0
+  max_iter: 150
+  solver: lbfgs
 
 
 

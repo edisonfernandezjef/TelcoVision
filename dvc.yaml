@@ -1,23 +1,21 @@
 stages:
-  data_prep:
-    cmd: python src/data_prep.py
-    deps:
-    - data/raw/telco_churn.csv
-    - src/data_prep.py
-    outs:
-    - data/processed/telco_churn_clean.csv
   train:
     cmd: python src/train.py
     deps:
-    - data/processed/telco_churn_clean.csv
-    - src/train.py
+      - src/train.py
+      - data/raw/telco_churn.csv
+      - params.yaml
     params:
-    - model.params.C
-    - model.params.max_iter
-    - split.random_state
-    - split.test_size
+      - model.C
+      - model.max_iter
+      - model.solver
+      - split.test_size
+      - split.random_state
+      - path.raw_data
+      - path.model_path
+      - path.metrics_path
     outs:
-    - models/telco_churn_model.pkl
+      - models/telco_churn_model.pkl
     metrics:
-    - metrics/metrics.json:
-        cache: false
+      - metrics/metrics.json
+
