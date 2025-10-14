@@ -1,9 +1,10 @@
 # 📡 TelcoVision — Predicción de Churn
 
 **Instituto:** ISTEA  
-**Materia:** Laboratorio de Minería de Datos  
+**Materia:** Laboratorio de Minería de Datos
+**Profesor:** Diego Mosquera
 **Carrera:** Ciencia de Datos e Inteligencia Artificial  
-**Autores:** Edison Fernandez, David , Luis Fuentes  
+**Autores:** Edison Fernandez, David Wuscovi, Luis Fuentes  
 **Año:** 2025  
 
 ---
